@@ -4,9 +4,12 @@ WORKDIR /app
 
 COPY . .
 
+RUN go mod download
+
+
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/avito
 
-FROM alpine:3.19.1
+FROM alpine:3.20
 
 WORKDIR /app
 

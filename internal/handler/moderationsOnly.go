@@ -9,7 +9,7 @@ import (
 func (h *Handler) CheckModerator(c *gin.Context) {
 	user, _ := c.Get("user")
 	if user.(domain.User).UserType != "moderator" {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		respondWithError(c, domain.NewCustomError(domain.AuthError()))
 		return
 	}
 
@@ -19,7 +19,7 @@ func (h *Handler) CheckModerator(c *gin.Context) {
 func (h *Handler) CreateHouse(c *gin.Context) {
 	var house domain.House
 	if err := c.ShouldBindJSON(&house); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		respondWithError(c, domain.NewCustomError(domain.InvalidInputError()))
 		return
 	}
 	createdHouse, err := h.CreateHouseService(house)
@@ -33,7 +33,7 @@ func (h *Handler) CreateHouse(c *gin.Context) {
 func (h *Handler) UpdateFlat(c *gin.Context) {
 	var flat domain.Flat
 	if err := c.ShouldBindJSON(&flat); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		respondWithError(c, domain.NewCustomError(domain.InvalidInputError()))
 		return
 	}
 	updatedFlat, err := h.UpdateFlatService(flat)

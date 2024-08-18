@@ -6,18 +6,10 @@ import (
 	"avito2024/internal/service"
 	"database/sql"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"log"
 	"os"
 )
-
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %q", err)
-	}
-}
 
 func SetupRouter() *gin.Engine {
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))

@@ -20,7 +20,7 @@ func (h *Handler) DummyLogin(c *gin.Context) {
 func (h *Handler) Login(c *gin.Context) {
 	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		respondWithError(c, domain.NewCustomError(domain.InvalidInputError()))
 		return
 	}
 	token, err := h.LoginService(user)
@@ -35,7 +35,7 @@ func (h *Handler) Login(c *gin.Context) {
 func (h *Handler) Register(c *gin.Context) {
 	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		respondWithError(c, domain.NewCustomError(domain.InvalidInputError()))
 		return
 	}
 	token, err := h.RegisterService(user)

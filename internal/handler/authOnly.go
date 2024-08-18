@@ -11,12 +11,12 @@ func (h *Handler) CheckUser(c *gin.Context) {
 	tokenString, err := c.Cookie("token")
 
 	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		respondWithError(c, domain.NewCustomError(domain.AuthError()))
 		return
 	}
 	user, err := h.CheckUserService(tokenString)
 	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		respondWithError(c, domain.NewCustomError(domain.AuthError()))
 		return
 	}
 
@@ -27,7 +27,7 @@ func (h *Handler) CheckUser(c *gin.Context) {
 func (h *Handler) GetHouseFlats(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		respondWithError(c, domain.NewCustomError(domain.InvalidInputError()))
 		return
 	}
 	user, _ := c.Get("user")
@@ -52,7 +52,7 @@ func (h *Handler) SubscribeHouse(c *gin.Context) {
 func (h *Handler) CreateFlat(c *gin.Context) {
 	var flat domain.Flat
 	if err := c.ShouldBindJSON(&flat); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
+		respondWithError(c, domain.NewCustomError(domain.InvalidInputError()))
 		return
 	}
 	createdFlat, err := h.CreateFlatService(flat)

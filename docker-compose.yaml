@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   postgres:
-    image: postgres:16.2
+    image: postgres:16.4
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: qwe
@@ -11,11 +11,11 @@ services:
     volumes:
       - ./migrations:/docker-entrypoint-initdb.d/
   app:
+    privileged: true
     build:
       context: .
       dockerfile: Dockerfile
     environment:
-      PORT: ${PORT}
       DATABASE_URL: postgres://postgres:qwe@postgres:5432/postgres?sslmode=disable
     depends_on:
       - postgres
