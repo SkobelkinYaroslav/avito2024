@@ -1,6 +1,8 @@
-# avito2024
+# Выполнено для Avito Backend Bootcamp
 ![workflow](https://github.com/SkobelkinYaroslav/avito2024/actions/workflows/go.yml/badge.svg   )
 ![tests](https://codecov.io/gh/SkobelkinYaroslav/avito2024/branch/main/graph/badge.svg)
+
+Пожалуйста, оставьте фидбэк через пул-реквест, почту (yaroslav34188@gmail.com) или в [телеграм](https://t.me/yarls).
 
 # Установка
 ```
