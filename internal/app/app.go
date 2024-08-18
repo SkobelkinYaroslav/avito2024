@@ -5,7 +5,6 @@ import (
 	"avito2024/internal/repository"
 	"avito2024/internal/service"
 	"database/sql"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -14,7 +13,6 @@ import (
 )
 
 func init() {
-	fmt.Println(os.Getwd())
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file: %q", err)
