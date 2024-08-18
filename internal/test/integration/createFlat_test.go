@@ -2,9 +2,9 @@ package integration
 
 import (
 	"avito2024/internal/app"
+	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-func TestGetHouseFlatsService(t *testing.T) {
+func TestCreateFlatService(t *testing.T) {
 	ctx := context.Background()
 
 	pgContainer, err := postgres.Run(ctx,
@@ -57,108 +57,62 @@ func TestGetHouseFlatsService(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		id                 int
+		houseId            int
+		price              int
+		rooms              int
 		expectedHTTPStatus int
 		expectedResponse   string
 	}{
 		{
 			name:               "Unauthorized request (missing cookies)",
-			id:                 1,
+			houseId:            1,
+			price:              1,
+			rooms:              1,
 			expectedHTTPStatus: 401,
 			expectedResponse:   "",
 		},
 		{
-			name:               "Valid response for existing house",
-			id:                 1,
+			name:               "Valid request",
+			houseId:            1,
+			price:              100,
+			rooms:              10,
 			expectedHTTPStatus: 200,
-			expectedResponse: `[
-			{
-				"id": 2,
-				"house_id": 1,
-				"price": 250000,
-				"rooms": 2,
-				"status": "approved"
-			},
-			{
-				"id": 5,
-				"house_id": 1,
-				"price": 500000,
-				"rooms": 5,
-				"status": "approved"
-			}
-			]`,
-		},
-		{
-			name:               "House does not exist",
-			id:                 999,
-			expectedHTTPStatus: 200,
-			expectedResponse:   "[]",
-		},
-		{
-			name:               "Moderator - mixed status flats",
-			id:                 1,
-			expectedHTTPStatus: 200,
-			expectedResponse: `[
-			{
-				"id": 1,
-				"house_id": 1,
-				"price": 300000,
-				"rooms": 3,
-				"status": "created"
-			},
-			{
-				"id": 2,
-				"house_id": 1,
-				"price": 250000,
-				"rooms": 2,
-				"status": "approved"
-			},
-			{
-				"id": 3,
-				"house_id": 1,
-				"price": 400000,
-				"rooms": 4,
-				"status": "on moderation"
-			},
-			{
-				"id": 4,
-				"house_id": 1,
-				"price": 150000,
-				"rooms": 1,
-				"status": "declined"
-			},
-			{
-				"id": 5,
-				"house_id": 1,
-				"price": 500000,
-				"rooms": 5,
-				"status": "approved"
-			},
-			{
-				"id": 6,
-				"house_id": 1,
-				"price": 350000,
-				"rooms": 3,
-				"status": "created"
-			}
-			]`,
-		},
-		{
-			name:               "Empty flats list",
-			id:                 102,
-			expectedHTTPStatus: 200,
-			expectedResponse:   "[]",
+			expectedResponse:   "{\n  \"house_id\": 1,\n  \"id\": 7,\n  \"price\": 100,\n  \"rooms\": 10,\n  \"status\": \"created\"\n}",
 		},
 		{
 			name:               "Invalid house ID",
-			id:                 -1,
+			houseId:            102,
+			price:              0,
+			rooms:              0,
+			expectedHTTPStatus: 400,
+			expectedResponse:   "",
+		},
+		{
+			name:               "Invalid price",
+			houseId:            1,
+			price:              -1,
+			rooms:              1,
+			expectedHTTPStatus: 400,
+			expectedResponse:   "",
+		},
+		{
+			name:               "Invalid rooms",
+			houseId:            1,
+			price:              1,
+			rooms:              -1,
 			expectedHTTPStatus: 400,
 			expectedResponse:   "",
 		},
 	}
 
 	t.Run(tests[0].name, func(t *testing.T) {
-		req, _ := http.NewRequest("GET", fmt.Sprintf("/house/%d", tests[0].id), nil)
+		reqBody, _ := json.Marshal(map[string]interface{}{
+			"house_id": tests[0].houseId,
+			"price":    tests[0].price,
+			"rooms":    tests[0].rooms,
+		})
+		req, _ := http.NewRequest("POST", "/flat/create", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
 		r.ServeHTTP(w, req)
@@ -190,10 +144,16 @@ func TestGetHouseFlatsService(t *testing.T) {
 	for i := 1; i < len(tests); i++ {
 		i := i
 		t.Run(tests[i].name, func(t *testing.T) {
-			req, err := http.NewRequest("GET", fmt.Sprintf("/house/%d", tests[i].id), nil)
+			reqBody, _ := json.Marshal(map[string]interface{}{
+				"house_id": tests[i].houseId,
+				"price":    tests[i].price,
+				"rooms":    tests[i].rooms,
+			})
+			req, err := http.NewRequest("POST", "/flat/create", bytes.NewBuffer(reqBody))
 			if err != nil {
 				t.Fatalf("Error creating request: %v", err)
 			}
+			req.Header.Set("Content-Type", "application/json")
 
 			if i != 3 {
 				req.AddCookie(client[0])

@@ -1,14 +1,12 @@
 package handler
 
 import (
+	"avito2024/pkg"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
-func SetRequestID() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		requestID := uuid.New().String()
-		c.Set("requestID", requestID)
-		c.Next()
-	}
+func (h *Handler) SetRequestID(c *gin.Context) {
+	requestID := pkg.UUID()
+	c.Set("requestID", requestID)
+	c.Next()
 }

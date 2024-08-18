@@ -1,0 +1,4 @@
+DROP TABLE Token;
+DROP TABLE Users;
+DROP TABLE Flats;
+DROP TABLE Houses;

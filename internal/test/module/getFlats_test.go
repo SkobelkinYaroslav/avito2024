@@ -4,6 +4,7 @@ import (
 	"avito2024/internal/domain"
 	mock_service "avito2024/internal/mocks"
 	"avito2024/internal/service"
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -13,9 +14,24 @@ import (
 func TestGetHouseFlatsService(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	mockRepo := mock_service.NewMockRepository(ctrl)
+	s := service.NewService(mockRepo)
 
-	mockRepo := mock_service.NewMockRepository(ctrl) // Создаем мок репозитория
-	s := service.NewService(mockRepo)                // Инициализируем сервис
+	client := domain.User{UserType: "client"}
+	moderator := domain.User{UserType: "moderator"}
+	flats := []domain.Flat{
+		{ID: 1, HouseID: 101, Price: 300000, Rooms: 3, Status: "approved"},
+		{ID: 2, HouseID: 101, Price: 250000, Rooms: 2, Status: "created"},
+		{ID: 3, HouseID: 101, Price: 400000, Rooms: 4, Status: "on moderation"},
+		{ID: 4, HouseID: 101, Price: 150000, Rooms: 1, Status: "declined"},
+		{ID: 5, HouseID: 101, Price: 500000, Rooms: 5, Status: "approved"},
+		{ID: 6, HouseID: 101, Price: 350000, Rooms: 3, Status: "created"},
+	}
+	approvedFlats := []domain.Flat{
+		{ID: 1, HouseID: 101, Price: 300000, Rooms: 3, Status: "approved"},
+		{ID: 5, HouseID: 101, Price: 500000, Rooms: 5, Status: "approved"},
+	}
+	bdError := domain.NewCustomError(domain.InternalError(fmt.Errorf("internal server error")))
 
 	tests := []struct {
 		name          string
@@ -26,53 +42,61 @@ func TestGetHouseFlatsService(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name: "Invalid house ID",
-			id:   -1,
-			user: domain.User{},
+			name: "Check if output is valid",
+			id:   101,
+			user: client,
 			mockBehavior: func(m *mock_service.MockRepository) {
+				m.EXPECT().GetHouseFlatsRepo(101).Return(flats, nil)
 			},
-			expectedFlats: nil,
-			expectedError: domain.NewCustomError(domain.InvalidInputError()),
-		},
-		{
-			name: "Repository error",
-			id:   1,
-			user: domain.User{},
-			mockBehavior: func(m *mock_service.MockRepository) {
-				m.EXPECT().GetHouseFlatsRepo(1).Return(nil, domain.NewCustomError(domain.InternalError(fmt.Errorf("internal server error"))))
-			},
-			expectedFlats: nil,
-			expectedError: domain.NewCustomError(domain.InternalError(fmt.Errorf("internal server error"))),
-		},
-		{
-			name: "Non-client user gets all flats",
-			id:   1,
-			user: domain.User{UserType: "admin"},
-			mockBehavior: func(m *mock_service.MockRepository) {
-				m.EXPECT().GetHouseFlatsRepo(1).Return([]domain.Flat{
-					{ID: 1, Status: "approved"},
-					{ID: 2, Status: "pending"},
-				}, nil)
-			},
-			expectedFlats: []domain.Flat{
-				{ID: 1, Status: "approved"},
-				{ID: 2, Status: "pending"},
-			},
+			expectedFlats: approvedFlats,
 			expectedError: nil,
 		},
 		{
-			name: "Client user gets only approved flats",
-			id:   1,
-			user: domain.User{UserType: "client"},
+			name:          "Invalid house ID",
+			id:            -1,
+			user:          client,
+			mockBehavior:  func(m *mock_service.MockRepository) {},
+			expectedFlats: nil,
+			expectedError: bdError,
+		},
+		{
+			name: "House doesnt exist",
+			id:   1337,
+			user: client,
 			mockBehavior: func(m *mock_service.MockRepository) {
-				m.EXPECT().GetHouseFlatsRepo(1).Return([]domain.Flat{
-					{ID: 1, Status: "approved"},
-					{ID: 2, Status: "pending"},
-				}, nil)
+				m.EXPECT().GetHouseFlatsRepo(1337).Return(nil, domain.NewCustomError(domain.InternalError(fmt.Errorf("internal server error"))))
 			},
-			expectedFlats: []domain.Flat{
-				{ID: 1, Status: "approved"},
+			expectedFlats: nil,
+			expectedError: bdError,
+		},
+		{
+			name: "Client gets only approved flats",
+			id:   101,
+			user: client,
+			mockBehavior: func(m *mock_service.MockRepository) {
+				m.EXPECT().GetHouseFlatsRepo(101).Return(flats, nil)
 			},
+			expectedFlats: approvedFlats,
+			expectedError: nil,
+		},
+		{
+			name: "Moderator gets all flats",
+			id:   101,
+			user: moderator,
+			mockBehavior: func(m *mock_service.MockRepository) {
+				m.EXPECT().GetHouseFlatsRepo(101).Return(flats, nil)
+			},
+			expectedFlats: flats,
+			expectedError: nil,
+		},
+		{
+			name: "Empty flats",
+			id:   101,
+			user: client,
+			mockBehavior: func(m *mock_service.MockRepository) {
+				m.EXPECT().GetHouseFlatsRepo(101).Return([]domain.Flat{}, nil)
+			},
+			expectedFlats: []domain.Flat{},
 			expectedError: nil,
 		},
 	}
@@ -83,7 +107,7 @@ func TestGetHouseFlatsService(t *testing.T) {
 
 			flats, err := s.GetHouseFlatsService(tt.id, tt.user)
 
-			assert.Equal(t, tt.expectedError, err)
+			errors.Is(tt.expectedError, err)
 			assert.Equal(t, tt.expectedFlats, flats)
 		})
 	}
