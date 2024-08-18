@@ -24,7 +24,7 @@ func TestCreateFlatService(t *testing.T) {
 
 	pgContainer, err := postgres.Run(ctx,
 		"postgres:14.13-alpine3.20",
-		postgres.WithInitScripts(filepath.Join("..", "..", "..", "migrations", "init.sql")),
+		postgres.WithInitScripts(filepath.Join("..", "..", "..", "migrations", "000001_init.up.sql")),
 		postgres.WithInitScripts(filepath.Join("addData.sql")),
 		postgres.WithDatabase("postgres"),
 		postgres.WithUsername("postgres"),
